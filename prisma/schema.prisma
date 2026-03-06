@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id          String   @id @default(uuid())
+  name        String
+  crmType     String   // "hubspot" | "salesforce"
+  crmConnectedAt DateTime?
+  createdAt   DateTime @default(now())
+  pipelines   Pipeline[]
+  benchmarks  Benchmark[]
+}
+
+model Pipeline {
+  id             String   @id @default(uuid())
+  externalId     String
+  name           String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  stages         Stage[]
+  deals          Deal[]
+  reports        PipelineReport[]
+
+  @@unique([organizationId, externalId])
+}
+
+model Stage {
+  id           String   @id @default(uuid())
+  externalId   String
+  name         String
+  displayOrder Int
+  probability  Int      // 0-100
+  isClosed     Boolean  @default(false)
+  isWon        Boolean  @default(false)
+  category     String   // StageCategory
+  pipelineId   String
+  pipeline     Pipeline @relation(fields: [pipelineId], references: [id])
+
+  @@unique([pipelineId, externalId])
+}
+
+model Deal {
+  id              String   @id @default(uuid())
+  externalId      String
+  name            String
+  amount          Int      // Cents
+  currency        String   @default("USD")
+  closeDate       DateTime
+  createdAt       DateTime
+  lastModifiedAt  DateTime
+  ownerId         String
+  ownerName       String
+  stageId         String
+  pipelineId      String
+  pipeline        Pipeline @relation(fields: [pipelineId], references: [id])
+  contacts        Contact[]
+  activities      Activity[]
+  stageHistory    StageHistory[]
+  validationResults ValidationResultRecord[]
+
+  @@unique([pipelineId, externalId])
+}
+
+model Contact {
+  id           String   @id @default(uuid())
+  externalId   String
+  email        String
+  firstName    String
+  lastName     String
+  title        String?
+  seniorityLevel String?
+  role         String?
+  addedAt      DateTime
+  dealId       String
+  deal         Deal     @relation(fields: [dealId], references: [id])
+}
+
+model Activity {
+  id          String   @id @default(uuid())
+  type        String   // ActivityType
+  timestamp   DateTime
+  description String?
+  dealId      String
+  deal        Deal     @relation(fields: [dealId], references: [id])
+}
+
+model StageHistory {
+  id        String   @id @default(uuid())
+  fromStage String
+  toStage   String
+  changedAt DateTime
+  dealId    String
+  deal      Deal     @relation(fields: [dealId], references: [id])
+}
+
+model Benchmark {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  computedAt     DateTime @default(now())
+  data           Json     // BenchmarkMetadata serialized
+}
+
+model PipelineReport {
+  id         String   @id @default(uuid())
+  pipelineId String
+  pipeline   Pipeline @relation(fields: [pipelineId], references: [id])
+  generatedAt DateTime @default(now())
+  summary    Json     // { errors, warnings, healthy }
+  results    Json     // Full DealValidationResult[]
+}
+
+model ValidationResultRecord {
+  id          String   @id @default(uuid())
+  dealId      String
+  deal        Deal     @relation(fields: [dealId], references: [id])
+  validatorId String
+  severity    String
+  title       String
+  description String
+  dataPoints  Json
+  confidence  String
+  createdAt   DateTime @default(now())
+}

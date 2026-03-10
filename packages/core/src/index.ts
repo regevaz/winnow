@@ -7,6 +7,7 @@ export * from './engine/validator.interface';
 // Export validators
 export * from './validators/unrealistic-close-date.validator';
 export * from './validators/missing-buying-committee.validator';
+export * from './validators/stage-activity-mismatch.validator';
 
 // Export utilities
 export * from './utils/seniority';

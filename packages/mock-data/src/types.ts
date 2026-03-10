@@ -1,4 +1,4 @@
-import { StageCategory } from '@winnow/core';
+import { StageCategory, Deal } from '@winnow/core';
 
 export interface ScenarioConfig {
   name: string;
@@ -51,6 +51,6 @@ export interface GeneratedPipeline {
     category: StageCategory;
     pipelineId: string;
   }[];
-  deals: any[];
-  closedWonDeals: any[];
+  deals: Deal[];
+  closedWonDeals: Deal[];
 }

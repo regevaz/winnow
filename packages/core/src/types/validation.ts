@@ -14,7 +14,7 @@ export interface ValidationResult {
   severity: ValidationSeverity;
   title: string;                    // Human-readable title (e.g., "Unrealistic Close Date")
   description: string;              // Detailed explanation with specific data points
-  dataPoints: Record<string, any>;  // Structured evidence (for UI rendering)
+  dataPoints: Record<string, unknown>;  // Structured evidence (for UI rendering)
   confidence: ConfidenceLevel;
 }
 

@@ -1,4 +1,4 @@
-import { Deal, DealStage, StageCategory, StageChange } from '@winnow/core';
+import { Deal, DealStage, StageCategory, StageChange, DealContact, DealActivity } from '@winnow/core';
 import { ScenarioConfig, DealHealthStatus } from '../types';
 import { uuid, randomInt, addDays, subtractDays, randomElement } from './utils';
 import { generateDealName, generateOwnerName, generateCompanyName } from './names';
@@ -41,10 +41,10 @@ export function generateDeal(
   const dealName = generateDealName(companyName);
 
   let closeDate: Date;
-  let contacts: any[];
+  let contacts: DealContact[];
   let lastModifiedAt: Date;
   let stageHistory: StageChange[];
-  let activities: any[];
+  let activities: DealActivity[];
 
   switch (healthStatus) {
     case 'healthy':

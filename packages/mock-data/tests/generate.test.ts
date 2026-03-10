@@ -230,7 +230,7 @@ describe('Mock Data Generator', () => {
     });
 
     it('should have valid distribution percentages', () => {
-      for (const [name, scenario] of Object.entries(SCENARIOS)) {
+      for (const scenario of Object.values(SCENARIOS)) {
         const total = scenario.distribution.healthy +
                      scenario.distribution.unrealisticCloseDate +
                      scenario.distribution.missingBuyingCommittee +

@@ -4,6 +4,7 @@ import {
   BenchmarkMetadata,
   CycleSegment,
   StageTimeDistribution,
+  StageCategory,
   ContactSegment,
   ConfidenceLevel,
   DEFAULT_BENCHMARK_CONFIG,
@@ -200,13 +201,13 @@ export class BenchmarkService {
     // Compute medians for each stage
     const distribution: StageTimeDistribution[] = [];
 
-    for (const [_key, data] of stageDataMap) {
+    for (const data of stageDataMap.values()) {
       if (data.percents.length === 0) continue;
 
       distribution.push({
         stageId: data.stageId,
         stageName: data.stageName,
-        category: data.category as any, // Category would need to be provided by deal timeline
+        category: data.category as StageCategory, // Category would need to be provided by deal timeline
         medianDaysInStage: Math.round(median(data.daysInStage)),
         medianPercentOfCycle: Math.round(median(data.percents) * 10) / 10, // Round to 1 decimal
       });

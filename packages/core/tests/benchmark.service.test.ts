@@ -99,7 +99,6 @@ describe('BenchmarkService', () => {
     });
 
     it('should respect lookback window configuration', () => {
-      const currentDate = new Date();
       const oldDate = new Date();
       oldDate.setMonth(oldDate.getMonth() - 18); // 18 months ago
 

@@ -68,6 +68,14 @@ winnow/
 
 ## Getting Started
 
+**First time?** Run the setup script (installs deps, creates `.env`, creates DB, runs migrations, builds):
+
+```bash
+npm run setup
+```
+
+Or follow the steps below manually.
+
 ### 1. Install Dependencies
 
 ```bash
@@ -134,6 +142,7 @@ npm run dev
 
 From the root directory:
 
+- `npm run setup` - First-time setup (install, .env, database, migrations, build)
 - `npm run build` - Build all packages
 - `npm run dev` - Start all packages in development mode
 - `npm run test` - Run tests across all packages

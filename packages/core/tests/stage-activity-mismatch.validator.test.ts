@@ -28,7 +28,6 @@ function createDeal(options: {
   createdAt?: Date;
 }): Deal {
   const {
-    stageCategory = 'evaluation',
     stageId = 'stage-eval',
     stageName = 'Evaluation',
     isClosed = false,

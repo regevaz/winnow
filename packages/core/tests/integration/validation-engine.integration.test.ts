@@ -74,7 +74,6 @@ function createOpenDeal(
   const {
     stageId = 'eval',
     stageName = 'Evaluation',
-    stageCategory = 'evaluation',
     closeDateDaysFromNow = 45,
     contactCount = 3,
     daysSinceLastActivity = 2,
@@ -255,7 +254,6 @@ describe('ValidationEngine integration', () => {
     ]);
     const report = engine.validate(deals, context);
 
-    const order = report.dealResults.map((r) => r.status);
     const errorIndices = report.dealResults
       .map((r, i) => (r.status === 'error' ? i : -1))
       .filter((i) => i >= 0);

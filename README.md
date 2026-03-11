@@ -149,9 +149,9 @@ Shared types, validation engine, and business logic. This package has no depende
 
 **Key exports:**
 - Type definitions for deals, stages, validation results, benchmarks
-- Validation engine (coming in Ticket 7)
-- Individual validators (coming in Tickets 4-6)
-- Statistical utilities (coming in Ticket 3)
+- Validation engine and individual validators (unrealistic close date, missing buying committee, stage-activity mismatch)
+- Benchmark computation service
+- Statistical and seniority utilities
 
 ### @winnow/api
 
@@ -263,7 +263,7 @@ This is the MVP implementation following a ticket-based development process:
 - ✅ **Ticket 4:** Unrealistic Close Date Validator (Complete)
 - ✅ **Ticket 5:** Missing Buying Committee Validator (Complete)
 - ✅ **Ticket 6:** Stage-Activity Mismatch Validator (Complete)
-- 🔲 **Ticket 7:** Validation Engine
+- ✅ **Ticket 7:** Validation Engine (Complete)
 - 🔲 **Ticket 8:** Pipeline Integrity Report API
 - 🔲 **Ticket 9:** Dashboard MVP
 

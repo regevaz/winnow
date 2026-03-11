@@ -14,3 +14,4 @@ export * from './utils/seniority';
 
 // Export engine services
 export * from './engine/benchmark.service';
+export * from './engine/validation-engine';

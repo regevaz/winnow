@@ -8,4 +8,12 @@ export default defineConfig({
       '@winnow/core': '../core/src',
     },
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
+  },
 });

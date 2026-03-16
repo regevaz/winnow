@@ -1,0 +1,11 @@
+{
+  "name": "@winnow/landing",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Winnow marketing landing page (www.winnow.com)",
+  "scripts": {
+    "build": "echo 'Static site - no build required'",
+    "start": "npx serve .",
+    "clean": "echo 'Nothing to clean'"
+  }
+}

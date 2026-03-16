@@ -41,7 +41,8 @@ export interface FullReportResponse extends ReportListItem, ReportView {
 /** Response from POST /api/validate */
 export type ValidateResponse = PipelineIntegrityReport;
 
-const API_BASE = '';
+/** In dev we use Vite proxy; in production set VITE_API_URL (e.g. https://api.winnow.com) */
+const API_BASE = typeof import.meta.env.VITE_API_URL === 'string' ? import.meta.env.VITE_API_URL : '';
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`);

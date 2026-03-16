@@ -1,0 +1,20 @@
+# Netlify config for www.winnow.com (marketing landing page)
+# In Netlify UI: set "Base directory" to packages/landing for this site.
+
+[build]
+  publish = "."
+  # No build command — static HTML/CSS only
+
+# When deploying via CLI from this dir, files end up at /packages/landing/; serve them at /
+[[redirects]]
+  from = "/"
+  to = "/packages/landing/index.html"
+  status = 200
+[[redirects]]
+  from = "/index.html"
+  to = "/packages/landing/index.html"
+  status = 200
+[[redirects]]
+  from = "/styles.css"
+  to = "/packages/landing/styles.css"
+  status = 200

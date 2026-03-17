@@ -40,7 +40,7 @@
             <span class="header__pill-dot"></span>
             HubSpot connected
           </div>
-          <a href="https://app.winnow.com" class="btn btn--primary btn--sm">Open app →</a>
+          <span class="coming-soon">Coming soon</span>
         </div>
       </div>
     </header>
@@ -62,8 +62,15 @@
             <p class="hero__desc">
               Winnow connects to your CRM and runs signal-based validation across every deal — surfacing missing committees, unrealistic close dates, and stale stages before they blow your quarter.
             </p>
+            <form class="waitlist" name="waitlist" data-netlify="true">
+              <input type="hidden" name="form-name" value="waitlist" />
+              <div class="waitlist__row">
+                <input type="email" name="email" placeholder="your@company.com" class="waitlist__input" required />
+                <button type="submit" class="btn btn--primary btn--lg">Get early access →</button>
+              </div>
+              <p class="waitlist__note">We're in private beta. No spam, just a heads-up when we launch.</p>
+            </form>
             <div class="hero__actions">
-              <a href="https://app.winnow.com" class="btn btn--primary btn--lg">Open dashboard →</a>
               <a href="#how-it-works" class="btn btn--ghost btn--lg">How it works</a>
             </div>
           </div>
@@ -294,9 +301,16 @@
         <div class="container">
           <div class="cta__box">
             <div class="cta__glow" aria-hidden="true"></div>
-            <h2 class="cta__title">Clean pipeline.<br />No surprises.</h2>
-            <p class="cta__desc">Connect your CRM and run validation in under two minutes.</p>
-            <a href="https://app.winnow.com" class="btn btn--primary btn--lg">Open Winnow →</a>
+            <span class="coming-soon coming-soon--lg">Private beta · Coming soon</span>
+            <h2 class="cta__title">Be the first to<br />validate your pipeline.</h2>
+            <p class="cta__desc">Drop your email and we'll reach out when Winnow is ready.</p>
+            <form class="waitlist waitlist--centered" name="waitlist-cta" data-netlify="true">
+              <input type="hidden" name="form-name" value="waitlist-cta" />
+              <div class="waitlist__row">
+                <input type="email" name="email" placeholder="your@company.com" class="waitlist__input" required />
+                <button type="submit" class="btn btn--primary btn--lg">Notify me →</button>
+              </div>
+            </form>
           </div>
         </div>
       </section>

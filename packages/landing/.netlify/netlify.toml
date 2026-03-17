@@ -7,11 +7,9 @@ headers = []
 [functions."*"]
 
 [build]
-publish = "/Users/regevazriel/dev/private/winnow/packages/landing/packages/web/dist"
+publish = "/Users/regevazriel/dev/private/winnow/packages/landing"
 publishOrigin = "config"
 base = "/Users/regevazriel/dev/private/winnow/packages/landing"
-command = "npm ci && npx turbo build --filter=@winnow/web"
-commandOrigin = "config"
 
 [build.environment]
 
@@ -28,8 +26,32 @@ commandOrigin = "config"
 [build.services]
 
 [[redirects]]
-from = "/*"
-to = "/index.html"
+from = "/"
+to = "/packages/landing/index.html"
+status = 200.0
+force = false
+
+[redirects.query]
+
+[redirects.conditions]
+
+[redirects.headers]
+
+[[redirects]]
+from = "/index.html"
+to = "/packages/landing/index.html"
+status = 200.0
+force = false
+
+[redirects.query]
+
+[redirects.conditions]
+
+[redirects.headers]
+
+[[redirects]]
+from = "/styles.css"
+to = "/packages/landing/styles.css"
 status = 200.0
 force = false
 

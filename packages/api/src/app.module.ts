@@ -9,6 +9,7 @@ import { ReportsModule } from './reports/reports.module';
 import { ValidationModule } from './validation/validation.module';
 import { HubspotModule } from './hubspot/hubspot.module';
 import { hubspotConfigFactory } from './hubspot/hubspot.config';
+import { SummaryModule } from './summary/summary.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { hubspotConfigFactory } from './hubspot/hubspot.config';
     ReportsModule,
     ValidationModule,
     HubspotModule,
+    SummaryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

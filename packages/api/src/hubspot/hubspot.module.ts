@@ -7,5 +7,6 @@ import { HubspotSyncWriterService } from './hubspot-sync-writer.service';
 @Module({
   providers: [HubspotService, HubspotApiClient, HubspotSyncWriterService],
   controllers: [HubspotController],
+  exports: [HubspotApiClient],
 })
 export class HubspotModule {}

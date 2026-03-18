@@ -63,6 +63,7 @@ model Deal {
   activities      Activity[]
   stageHistory    StageHistory[]
   validationResults ValidationResultRecord[]
+  summary         DealSummary?
 
   @@unique([pipelineId, externalId])
 }
@@ -127,4 +128,20 @@ model ValidationResultRecord {
   dataPoints  Json
   confidence  String
   createdAt   DateTime @default(now())
+}
+
+model DealSummary {
+  id                  String   @id @default(uuid())
+  dealId              String   @unique
+  deal                Deal     @relation(fields: [dealId], references: [id])
+  summary             String
+  lastActivityContext String
+  recommendedAction   String
+  riskSignals         Json     // string[]
+  activityCount       Int
+  confidence          String   // 'high' | 'low'
+  source              String   // 'ai' | 'fallback'
+  generatedAt         DateTime @default(now())
+  expiresAt           DateTime
+  activityHash        String
 }

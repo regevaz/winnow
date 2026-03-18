@@ -7,6 +7,7 @@ import type {
   PipelineIntegrityReport,
   DealValidationResult,
   ValidationResult,
+  DealContextSummary,
 } from '@winnow/core';
 
 export interface ReportListItem {
@@ -75,6 +76,9 @@ export const api = {
 
   validate: (pipelineId: string) =>
     post<ValidateResponse>('/api/validate', { pipelineId }),
+
+  getDealSummary: (dealId: string) =>
+    get<DealContextSummary>(`/api/deals/${encodeURIComponent(dealId)}/summary`),
 };
 
-export type { DealValidationResult, ValidationResult };
+export type { DealValidationResult, ValidationResult, DealContextSummary };

@@ -8,6 +8,8 @@ import {
   HubSpotPropertyHistoryEntry,
   HubSpotPaginatedResponse,
   HubSpotAssociation,
+  HubSpotActivityEngagement,
+  HubSpotActivityContent,
 } from './types/hubspot-api.types';
 
 const BASE_URL = 'https://api.hubapi.com';
@@ -107,6 +109,60 @@ export class HubspotApiClient {
     );
 
     return data.propertiesWithHistory?.dealstage ?? [];
+  }
+
+  async fetchActivityEngagementsForDeal(dealId: string): Promise<HubSpotActivityContent[]> {
+    const assocData = await this.get<HubSpotPaginatedResponse<HubSpotAssociation>>(
+      `/crm/v3/objects/deals/${dealId}/associations/engagements`,
+    );
+
+    const ninety_days_ago = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+
+    const engagements: HubSpotActivityEngagement[] = [];
+    for (const assoc of assocData.results) {
+      const engagement = await this.get<HubSpotActivityEngagement>(
+        `/crm/v3/objects/engagements/${assoc.id}?properties=hs_engagement_type,hs_timestamp,hs_body_preview,hs_task_status,hs_meeting_title,hs_meeting_outcome,hs_call_body,hs_email_subject`,
+      );
+      engagements.push(engagement);
+    }
+
+    return engagements
+      .filter((e) => {
+        const ts = new Date(e.properties.hs_timestamp);
+        return ts >= ninety_days_ago;
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.properties.hs_timestamp).getTime() -
+          new Date(a.properties.hs_timestamp).getTime(),
+      )
+      .slice(0, 10)
+      .map((e) => ({
+        id: e.id,
+        type: (e.properties.hs_engagement_type ?? 'unknown').toLowerCase(),
+        timestamp: new Date(e.properties.hs_timestamp),
+        content: this.extractActivityContent(e),
+      }));
+  }
+
+  private extractActivityContent(e: HubSpotActivityEngagement): string {
+    const p = e.properties;
+    const type = (p.hs_engagement_type ?? '').toUpperCase();
+
+    let raw = '';
+    if (type === 'MEETING') {
+      const title = p.hs_meeting_title ?? '';
+      const outcome = p.hs_meeting_outcome ?? '';
+      raw = [title, outcome].filter(Boolean).join(' — ');
+    } else if (type === 'CALL') {
+      raw = p.hs_call_body ?? p.hs_body_preview ?? '';
+    } else if (type === 'EMAIL') {
+      raw = p.hs_email_subject ?? p.hs_body_preview ?? '';
+    } else {
+      raw = p.hs_body_preview ?? '';
+    }
+
+    return raw.slice(0, 300).trim() || '(no content)';
   }
 
   async fetchOwnerName(ownerId: string): Promise<string> {

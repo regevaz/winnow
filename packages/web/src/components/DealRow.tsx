@@ -1,6 +1,7 @@
 import type { Deal } from '@winnow/core';
 import { ValidationBadge } from './ValidationBadge';
 import { ValidationDetail } from './ValidationDetail';
+import { DealBrief } from './DealBrief';
 import type { DealValidationResult } from '../api/client';
 
 function formatAmount(cents: number): string {
@@ -64,7 +65,10 @@ export function DealRow({ result, expanded, onToggle }: DealRowProps) {
         <tr className="bg-gray-50">
           <td colSpan={7} className="py-4 px-4">
             <div className="space-y-3 pl-2">
-              <p className="text-sm font-medium text-gray-700">Validation details</p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-700">Validation details</p>
+                <DealBrief dealId={deal.id} />
+              </div>
               {validations.map((v) => (
                 <ValidationDetail key={v.validatorId} validation={v} />
               ))}

@@ -1115,3 +1115,264 @@ Estimated effort per ticket with AI agent execution:
 - Ticket 9: ~2 sessions (UI has more iteration)
 
 Total: ~10-12 Claude Code sessions to reach a working MVP with mock data.
+
+---
+
+## Ticket 10: AI Deal Context Summary
+
+**Goal:** For each deal that has validation findings, generate an AI-powered summary that gives a manager instant context — what's actually happening in the deal, why the flags matter, and what to do next. This is Winnow's answer to Scratchpad's auto-draft: instead of helping reps enter data, it helps managers *understand* data they already have.
+
+### Why This Matters Competitively
+
+Scratchpad's auto-draft feature reads calls and emails to help sellers update Salesforce fields. That's a seller-productivity tool. Winnow's AI Deal Summary reads the same raw signal (HubSpot activity timeline) but produces **manager-facing intelligence**: a concise brief that lets a VP of Sales understand 10 flagged deals in 2 minutes before a forecast call — without opening HubSpot.
+
+This is something Scratchpad explicitly does not provide. It also differentiates from Cotera (narrative reports over the whole pipeline) by being deal-level and tightly integrated with Winnow's validation findings.
+
+---
+
+### What It Produces
+
+For each flagged deal in a Pipeline Integrity Report:
+
+```typescript
+// packages/core/src/types/summary.ts
+
+export interface DealContextSummary {
+  dealId: string;
+  summary: string;             // 2-3 sentence narrative of deal status
+  lastActivityContext: string; // Plain-English description of most recent meaningful activity
+  recommendedAction: string;   // One concrete thing the manager should do
+  riskSignals: string[];       // Bullet list of specific concerns, derived from findings + activity
+  generatedAt: Date;
+  activityCount: number;       // How many activities were analyzed
+  confidence: 'high' | 'low'; // high = 3+ activities in last 30 days; low = sparse data
+  source: 'ai' | 'fallback';  // fallback = no activities, uses validation data only
+}
+```
+
+**Example output for a stale deal in Proposal stage:**
+
+> **Summary:** Acme Corp has been in Proposal stage for 38 days with no meaningful activity since February 12. The deal is $120k with only one contact — a mid-level IT Manager — and the close date has been pushed twice.
+>
+> **Last activity:** A note was logged on Feb 12 mentioning "waiting on legal review." No follow-up task was created.
+>
+> **Recommended action:** Reach out to the owner to confirm whether legal review is still in progress or if the deal has stalled. If no response by end of week, consider updating forecast to Best Case.
+>
+> **Risk signals:**
+> - No senior stakeholder (VP or above) in the deal
+> - Close date pushed 2 times — deals with 2+ pushes close at 34% in your pipeline
+> - 38 days since last activity vs. 10-day warning threshold for Proposal stage
+
+---
+
+### Acceptance Criteria
+
+1. A `DealSummaryService` in `packages/api/src/summary/summary.service.ts`
+2. Fetches activity content from HubSpot for each flagged deal (notes, call outcomes, email subjects)
+3. Calls Claude API (claude-haiku-4-5 for cost efficiency) with structured prompt
+4. Returns `DealContextSummary` per deal
+5. Summaries are cached in the DB with a 24-hour TTL — re-generated only when new HubSpot activity exists
+6. New API endpoint: `GET /api/deals/:id/summary` returns cached or freshly generated summary
+7. Summaries are optionally embedded in `PipelineIntegrityReport` (opt-in via query param `?includeSummaries=true`)
+8. Graceful fallback: if Claude API is unavailable or deal has no activities, generate a rule-based summary from validation findings alone
+9. Cost guard: max 10 activity entries sent to Claude per deal (most recent first); trim older entries
+10. Unit tests for the prompt-building logic and fallback path; integration test for the full service
+
+---
+
+### HubSpot Activity Fetching
+
+Extend the existing HubSpot module to fetch activity *content* (not just metadata):
+
+```typescript
+// packages/api/src/hubspot/hubspot.service.ts — new method
+
+async getDealActivities(hubspotDealId: string): Promise<HubSpotActivity[]>
+```
+
+Activity types to fetch and what content to extract:
+
+| HubSpot Type | Content to Extract |
+|---|---|
+| `notes` | `hs_note_body` (note text) |
+| `calls` | `hs_call_body` (call outcome/notes), `hs_call_direction`, `hs_call_duration` |
+| `emails` | `hs_email_subject`, `hs_email_direction` (no body — too noisy) |
+| `meetings` | `hs_meeting_title`, `hs_meeting_outcome`, `hs_meeting_body` |
+| `tasks` | `hs_task_subject`, `hs_task_status`, `hs_task_body` |
+
+Return the 10 most recent, sorted descending by timestamp. Skip activities older than 90 days.
+
+```typescript
+export interface HubSpotActivity {
+  id: string;
+  type: 'note' | 'call' | 'email' | 'meeting' | 'task';
+  timestamp: Date;
+  content: string;    // Extracted and cleaned text — max 500 chars per activity
+  outcome?: string;   // For calls: Connected/No Answer. For tasks: Completed/Not Started.
+}
+```
+
+---
+
+### Claude Prompt Design
+
+**Model:** `claude-haiku-4-5-20251001` — sufficient for structured summarization, 3x cheaper than Sonnet.
+
+**System prompt:**
+
+```
+You are a revenue operations analyst helping a sales manager quickly understand deal health.
+You will be given: structured data about a deal (stage, amount, close date, owner),
+validation findings from an automated pipeline audit, and recent CRM activity from HubSpot.
+
+Your job is to produce a concise, factual deal brief. Be direct. Use specific numbers.
+Do not speculate beyond what the data shows. Do not use filler phrases.
+Output valid JSON matching the schema provided.
+```
+
+**User prompt structure:**
+
+```
+## Deal
+Name: {deal.name}
+Owner: {deal.ownerName}
+Stage: {deal.stage.name} (entered {daysInStage} days ago)
+Amount: ${deal.amount / 100}
+Close Date: {deal.closeDate} ({daysUntilClose} days away)
+Contacts: {contactCount} ({seniorContactSummary})
+
+## Validation Findings
+{findings.map(f => `[${f.severity.toUpperCase()}] ${f.title}: ${f.description}`).join('\n')}
+
+## Recent CRM Activity ({activityCount} activities, last 90 days)
+{activities.map(a => `[${a.type} - ${a.timestamp}] ${a.content}`).join('\n')}
+
+## Required Output (JSON)
+{
+  "summary": "<2-3 sentences: current deal status and primary concern>",
+  "lastActivityContext": "<1 sentence: what the most recent activity was about>",
+  "recommendedAction": "<1 concrete action the manager should take>",
+  "riskSignals": ["<signal 1>", "<signal 2>", ...]
+}
+```
+
+---
+
+### Caching Schema
+
+Add to Prisma schema:
+
+```prisma
+model DealSummary {
+  id              String   @id @default(uuid())
+  dealId          String   @unique
+  deal            Deal     @relation(fields: [dealId], references: [id])
+  summary         String
+  lastActivityContext String
+  recommendedAction   String
+  riskSignals     Json     // string[]
+  activityCount   Int
+  confidence      String   // 'high' | 'low'
+  source          String   // 'ai' | 'fallback'
+  generatedAt     DateTime @default(now())
+  expiresAt       DateTime // generatedAt + 24 hours
+  hubspotActivityHash String // SHA-256 of activity IDs — used to detect new activity
+}
+```
+
+Cache invalidation logic:
+- On `GET /api/deals/:id/summary`: compare current HubSpot activity hash to stored hash
+- If hash changed OR `expiresAt` passed → regenerate
+- Otherwise → return cached
+
+---
+
+### Fallback Summary (No Claude / No Activities)
+
+When Claude is unavailable or the deal has zero activities, generate a deterministic summary from validation findings:
+
+```typescript
+function buildFallbackSummary(deal: Deal, findings: ValidationResult[]): DealContextSummary {
+  const errors = findings.filter(f => f.severity === 'error');
+  const warnings = findings.filter(f => f.severity === 'warning');
+
+  return {
+    summary: `${deal.name} has ${errors.length} critical issue(s) and ${warnings.length} warning(s). No CRM activity data is available for additional context.`,
+    lastActivityContext: 'No activities logged in HubSpot.',
+    recommendedAction: errors.length > 0
+      ? `Review the ${errors[0].title.toLowerCase()} finding with the deal owner before the next forecast call.`
+      : `Monitor deal for progress — ${warnings[0]?.title ?? 'hygiene issues'} flagged.`,
+    riskSignals: findings.map(f => `[${f.severity}] ${f.title}`),
+    activityCount: 0,
+    confidence: 'low',
+    source: 'fallback',
+    generatedAt: new Date(),
+  };
+}
+```
+
+---
+
+### API Module Structure
+
+```
+packages/api/src/
+  summary/
+    summary.module.ts
+    summary.controller.ts       # GET /api/deals/:id/summary
+    summary.service.ts          # Orchestrates: fetch activities → build prompt → call Claude → cache
+    summary.prompt.ts           # Prompt construction — isolated for testability
+    summary.fallback.ts         # Rule-based fallback when Claude unavailable
+```
+
+---
+
+### Dashboard Integration
+
+In the existing `DealRow` component (Ticket 9), add a "Get AI Brief" button that appears only for deals with `status: 'error' | 'warning'`. On click:
+
+1. Calls `GET /api/deals/:id/summary`
+2. Renders an expandable panel below the validation findings:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ AI Deal Brief  ·  Generated 2 hours ago                         │
+├─────────────────────────────────────────────────────────────────┤
+│ Acme Corp has been in Proposal for 38 days with no activity     │
+│ since Feb 12. One contact (IT Manager) and close date pushed    │
+│ twice — likely stalled in legal review.                         │
+│                                                                 │
+│ Last activity: Note on Feb 12 — "waiting on legal review"       │
+│                                                                 │
+│ → Recommended: Confirm legal review status with owner.          │
+│                                                                 │
+│ Risk signals:                                                   │
+│   • No senior stakeholder (VP or above)                         │
+│   • Close date pushed 2x — 34% close rate in your pipeline      │
+│   • 38 days since activity vs. 10-day proposal threshold        │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+No full-page reload — fetch and render inline.
+
+---
+
+### Cost Model
+
+- Model: `claude-haiku-4-5` — ~$0.25/1M input tokens, ~$1.25/1M output tokens
+- Estimated tokens per summary: ~800 input, ~200 output
+- Cost per summary: ~$0.0005 (half a cent)
+- At 50 deals/pipeline, 3 runs/week: ~$0.075/week per customer
+- 24-hour cache means most summaries are served for free
+
+---
+
+### Test Scenarios
+
+1. **Full AI path:** Deal has 5 activities in last 30 days → Claude generates summary → cached → second call returns cache
+2. **Cache invalidation:** New HubSpot activity logged → hash changes → summary regenerated on next request
+3. **Fallback — no activities:** Deal with zero HubSpot activities → fallback summary generated from findings
+4. **Fallback — Claude unavailable:** Claude API returns 5xx → fallback summary returned, no error to user
+5. **Cost guard:** Deal has 25 activities → only 10 most recent sent to Claude
+6. **Healthy deal excluded:** Deal with status `healthy` → `GET /api/deals/:id/summary` returns 404
+7. **Prompt building unit test:** Given mock deal + findings + activities → verify prompt contains all required fields and stays under token budget

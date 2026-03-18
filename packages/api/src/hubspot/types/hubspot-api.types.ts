@@ -76,3 +76,27 @@ export interface HubSpotAssociation {
   id: string;
   type: string;
 }
+
+export interface HubSpotActivityEngagementProperties {
+  hs_engagement_type: string;
+  hs_timestamp: string;
+  hs_body_preview: string | null;
+  hs_task_status: string | null;
+  hs_meeting_title: string | null;
+  hs_meeting_outcome: string | null;
+  hs_call_body: string | null;
+  hs_email_subject: string | null;
+}
+
+export interface HubSpotActivityEngagement {
+  id: string;
+  properties: HubSpotActivityEngagementProperties;
+}
+
+/** Cleaned activity content ready for prompt injection */
+export interface HubSpotActivityContent {
+  id: string;
+  type: string;
+  timestamp: Date;
+  content: string; // max 300 chars
+}

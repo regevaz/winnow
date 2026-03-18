@@ -8,6 +8,12 @@ Winnow — a Revenue Pipeline Validator that connects to CRMs and detects pipeli
 
 All implementation specs, ticket details, shared types, and architecture decisions are in `docs/specs.md`. Always read it before starting any ticket.
 
+## Competitive Context
+
+Before building any feature that touches pipeline health, hygiene monitoring, or deal validation, read `docs/competitors.md`. It contains a detailed breakdown of Scratchpad (the most direct competitor), Clari, Cotera, and native CRM tools. Understanding what they do and where they fall short is essential for making the right product decisions in Winnow.
+
+Market validation evidence (why the problem is real) is in `docs/validation-summary.md`.
+
 ## Tech Stack
 
 - **Monorepo:** Turborepo
@@ -127,3 +133,25 @@ Three levels: `error` (high confidence issue), `warning` (likely issue), `info` 
 - Don't skip writing tests to save time — tests are required for every validator
 - Don't use `new Date()` in validators — use `context.currentDate`
 - Don't put business logic in controllers — keep them thin, logic goes in services
+
+## Agent Harness (ECC Plugin)
+Installed via everything-claude-code plugin.
+
+### Key agents to use for this project:
+- planner → before starting any new feature
+- architect → for system design decisions
+- tdd-guide → all implementation work
+- code-reviewer → after implementation
+- database-reviewer → any Prisma/PostgreSQL changes
+- build-error-resolver → CI failures
+
+### Key skills active:
+- backend-patterns, postgres-patterns, api-design
+- tdd-workflow, verification-loop
+- cost-aware-llm-pipeline, autonomous-loops
+- database-migrations (Prisma)
+
+### Model routing:
+- Default: sonnet
+- Architecture/deep debugging: /model opus
+- Subagents: haiku

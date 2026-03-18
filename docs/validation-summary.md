@@ -144,7 +144,14 @@ Existing tools fall into two camps:
 
 This is exactly the gap Winnow fills.
 
-### One notable early competitor
+### Notable competitors
+
+**Scratchpad** (scratchpad.com) — the most established product in this space. 1,470+ G2 reviews, 4.8/5. Salesforce-only seller workspace with a "Hygiene Monitor" feature that detects missing fields, stale data, and overdue tasks. Key facts:
+- Salesforce-only — the entire HubSpot market is open
+- Seller-facing (makes CRM entry easier) vs. Winnow (validates what's already there)
+- Checks field completion, not benchmark-based signal rules
+- $19–49/user/month per seller seat — expensive for large teams
+- Full competitive breakdown: `docs/competitors.md`
 
 **Cotera** (cotera.co) — a HubSpot-focused AI pipeline monitor, launched publicly ~March 2026. Their case study is the most detailed public evidence of this exact pain. Key facts:
 - They describe the same $1.3M zombie deal problem Winnow is built to solve

@@ -11,22 +11,43 @@ import {
   HubSpotActivityEngagement,
   HubSpotActivityContent,
 } from './types/hubspot-api.types';
+import { HubspotOAuthService } from './hubspot-oauth.service';
 
 const BASE_URL = 'https://api.hubapi.com';
 
 @Injectable()
 export class HubspotApiClient {
-  private readonly accessToken: string;
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly oauthService: HubspotOAuthService,
+  ) {}
 
-  constructor(private readonly configService: ConfigService) {
-    this.accessToken = this.configService.get<string>('hubspot.accessToken') ?? '';
+  /**
+   * Resolves the access token to use for API calls.
+   * When orgId is provided, fetches the org's OAuth token (auto-refreshing if needed).
+   * Falls back to the static HUBSPOT_ACCESS_TOKEN for local dev / backward compat.
+   */
+  private async resolveToken(orgId?: string): Promise<string> {
+    if (orgId) {
+      return this.oauthService.getAccessToken(orgId);
+    }
+
+    const staticToken = this.configService.get<string>('hubspot.accessToken');
+    if (!staticToken) {
+      throw new Error(
+        'No HubSpot access token available. Either provide orgId (OAuth) or set HUBSPOT_ACCESS_TOKEN.',
+      );
+    }
+    return staticToken;
   }
 
-  private async get<T>(path: string): Promise<T> {
+  private async get<T>(path: string, orgId?: string): Promise<T> {
+    const token = await this.resolveToken(orgId);
     const url = `${BASE_URL}${path}`;
+
     const response = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${this.accessToken}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
@@ -39,14 +60,15 @@ export class HubspotApiClient {
     return response.json() as Promise<T>;
   }
 
-  async fetchPipelines(): Promise<HubSpotPipeline[]> {
+  async fetchPipelines(orgId?: string): Promise<HubSpotPipeline[]> {
     const data = await this.get<HubSpotPaginatedResponse<HubSpotPipeline>>(
       '/crm/v3/pipelines/deals',
+      orgId,
     );
     return data.results;
   }
 
-  async fetchAllDeals(): Promise<HubSpotDeal[]> {
+  async fetchAllDeals(orgId?: string): Promise<HubSpotDeal[]> {
     const deals: HubSpotDeal[] = [];
     let after: string | undefined;
 
@@ -60,6 +82,7 @@ export class HubspotApiClient {
 
       const data = await this.get<HubSpotPaginatedResponse<HubSpotDeal>>(
         `/crm/v3/objects/deals?${params.toString()}`,
+        orgId,
       );
 
       deals.push(...data.results);
@@ -69,15 +92,17 @@ export class HubspotApiClient {
     return deals;
   }
 
-  async fetchContactsForDeal(dealId: string): Promise<HubSpotContact[]> {
+  async fetchContactsForDeal(dealId: string, orgId?: string): Promise<HubSpotContact[]> {
     const assocData = await this.get<HubSpotPaginatedResponse<HubSpotAssociation>>(
       `/crm/v3/objects/deals/${dealId}/associations/contacts`,
+      orgId,
     );
 
     const contacts: HubSpotContact[] = [];
     for (const assoc of assocData.results) {
       const contact = await this.get<HubSpotContact>(
         `/crm/v3/objects/contacts/${assoc.id}?properties=email,firstname,lastname,jobtitle,createdate`,
+        orgId,
       );
       contacts.push(contact);
     }
@@ -85,15 +110,17 @@ export class HubspotApiClient {
     return contacts;
   }
 
-  async fetchEngagementsForDeal(dealId: string): Promise<HubSpotEngagement[]> {
+  async fetchEngagementsForDeal(dealId: string, orgId?: string): Promise<HubSpotEngagement[]> {
     const assocData = await this.get<HubSpotPaginatedResponse<HubSpotAssociation>>(
       `/crm/v3/objects/deals/${dealId}/associations/engagements`,
+      orgId,
     );
 
     const engagements: HubSpotEngagement[] = [];
     for (const assoc of assocData.results) {
       const engagement = await this.get<HubSpotEngagement>(
         `/crm/v3/objects/engagements/${assoc.id}?properties=hs_engagement_type,hs_timestamp,hs_body_preview,hs_task_status`,
+        orgId,
       );
       engagements.push(engagement);
     }
@@ -101,19 +128,21 @@ export class HubspotApiClient {
     return engagements;
   }
 
-  async fetchStageHistory(dealId: string): Promise<HubSpotPropertyHistoryEntry[]> {
+  async fetchStageHistory(dealId: string, orgId?: string): Promise<HubSpotPropertyHistoryEntry[]> {
     const data = await this.get<{
       propertiesWithHistory: { dealstage: HubSpotPropertyHistoryEntry[] };
     }>(
       `/crm/v3/objects/deals/${dealId}?propertiesWithHistory=dealstage`,
+      orgId,
     );
 
     return data.propertiesWithHistory?.dealstage ?? [];
   }
 
-  async fetchActivityEngagementsForDeal(dealId: string): Promise<HubSpotActivityContent[]> {
+  async fetchActivityEngagementsForDeal(dealId: string, orgId?: string): Promise<HubSpotActivityContent[]> {
     const assocData = await this.get<HubSpotPaginatedResponse<HubSpotAssociation>>(
       `/crm/v3/objects/deals/${dealId}/associations/engagements`,
+      orgId,
     );
 
     const ninety_days_ago = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
@@ -122,6 +151,7 @@ export class HubspotApiClient {
     for (const assoc of assocData.results) {
       const engagement = await this.get<HubSpotActivityEngagement>(
         `/crm/v3/objects/engagements/${assoc.id}?properties=hs_engagement_type,hs_timestamp,hs_body_preview,hs_task_status,hs_meeting_title,hs_meeting_outcome,hs_call_body,hs_email_subject`,
+        orgId,
       );
       engagements.push(engagement);
     }
@@ -165,12 +195,12 @@ export class HubspotApiClient {
     return raw.slice(0, 300).trim() || '(no content)';
   }
 
-  async fetchOwnerName(ownerId: string): Promise<string> {
+  async fetchOwnerName(ownerId: string, orgId?: string): Promise<string> {
     const data = await this.get<{
       id: string;
       firstName: string;
       lastName: string;
-    }>(`/crm/v3/owners/${ownerId}`);
+    }>(`/crm/v3/owners/${ownerId}`, orgId);
 
     return `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim();
   }

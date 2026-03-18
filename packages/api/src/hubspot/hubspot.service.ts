@@ -21,14 +21,14 @@ export class HubspotService {
   async sync(): Promise<SyncResultDto> {
     const startTime = Date.now();
 
+    const orgId = await this.writer.upsertOrganization('HubSpot Organization');
+
     let pipelines;
     try {
-      pipelines = await this.apiClient.fetchPipelines();
+      pipelines = await this.apiClient.fetchPipelines(orgId);
     } catch (err) {
       throw new BadGatewayException(`HubSpot API error: ${(err as Error).message}`);
     }
-
-    const orgId = await this.writer.upsertOrganization('HubSpot Organization');
 
     let pipelinesUpserted = 0;
     let stagesUpserted = 0;
@@ -54,7 +54,7 @@ export class HubspotService {
 
     let allDeals;
     try {
-      allDeals = await this.apiClient.fetchAllDeals();
+      allDeals = await this.apiClient.fetchAllDeals(orgId);
     } catch (err) {
       throw new BadGatewayException(`HubSpot API error: ${(err as Error).message}`);
     }
@@ -89,16 +89,16 @@ export class HubspotService {
               if (!ownerCache.has(ownerId)) {
                 ownerCache.set(
                   ownerId,
-                  this.apiClient.fetchOwnerName(ownerId).catch(() => ''),
+                  this.apiClient.fetchOwnerName(ownerId, orgId).catch(() => ''),
                 );
               }
               ownerName = (await ownerCache.get(ownerId)) ?? '';
             }
 
             const [contacts, engagements, stageHistoryEntries] = await Promise.all([
-              this.apiClient.fetchContactsForDeal(deal.id),
-              this.apiClient.fetchEngagementsForDeal(deal.id),
-              this.apiClient.fetchStageHistory(deal.id),
+              this.apiClient.fetchContactsForDeal(deal.id, orgId),
+              this.apiClient.fetchEngagementsForDeal(deal.id, orgId),
+              this.apiClient.fetchStageHistory(deal.id, orgId),
             ]);
 
             const mappedDeal = mapDeal(deal, ownerName, stageMap, stageHistoryEntries);

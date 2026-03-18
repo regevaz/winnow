@@ -12,6 +12,14 @@ model Organization {
   name        String
   crmType     String   // "hubspot" | "salesforce"
   crmConnectedAt DateTime?
+
+  // HubSpot OAuth fields
+  hubspotPortalId       String?
+  hubspotAccessToken    String?
+  hubspotRefreshToken   String?
+  hubspotTokenExpiresAt DateTime?
+  hubspotOAuthState     String?   // temporary during OAuth flow
+
   createdAt   DateTime @default(now())
   pipelines   Pipeline[]
   benchmarks  Benchmark[]

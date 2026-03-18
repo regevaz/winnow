@@ -1,11 +1,19 @@
 export const HUBSPOT_CONFIG = 'HUBSPOT_CONFIG';
 
 export interface HubspotConfig {
-  accessToken: string;
+  accessToken?: string;
+  clientId?: string;
+  clientSecret?: string;
+  redirectUri?: string;
 }
 
 export const hubspotConfigFactory = (): { hubspot: HubspotConfig } => {
-  const token = process.env.HUBSPOT_ACCESS_TOKEN;
-  if (!token) throw new Error('HUBSPOT_ACCESS_TOKEN is required');
-  return { hubspot: { accessToken: token } };
+  return {
+    hubspot: {
+      accessToken: process.env.HUBSPOT_ACCESS_TOKEN,
+      clientId: process.env.HUBSPOT_CLIENT_ID,
+      clientSecret: process.env.HUBSPOT_CLIENT_SECRET,
+      redirectUri: process.env.HUBSPOT_REDIRECT_URI,
+    },
+  };
 };

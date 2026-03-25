@@ -4,6 +4,12 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 
+// Set dummy HubSpot env vars so ConfigModule doesn't fail without real credentials
+process.env.HUBSPOT_ACCESS_TOKEN = 'test-token';
+process.env.HUBSPOT_CLIENT_ID = 'test-client-id';
+process.env.HUBSPOT_CLIENT_SECRET = 'test-client-secret';
+process.env.HUBSPOT_REDIRECT_URI = 'http://localhost:3000/hubspot/oauth/callback';
+
 // Mock PrismaService to avoid database connection in tests
 const mockPrismaService = {
   onModuleInit: jest.fn(),

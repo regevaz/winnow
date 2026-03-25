@@ -13,6 +13,7 @@ export class HubspotSyncWriterService {
   async upsertOrganization(name: string): Promise<string> {
     const existing = await this.prisma.organization.findFirst({
       where: { crmType: 'hubspot' },
+      orderBy: { crmConnectedAt: 'desc' },
     });
 
     if (existing) return existing.id;

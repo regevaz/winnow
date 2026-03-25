@@ -42,3 +42,8 @@ yarn-debug.log*
 yarn-error.log*
 
 # Prisma (migrations are version-controlled — do not ignore)
+
+# HubSpot config file
+hubspot.config.yml
+*.hubspot.config.yml
+archived.hubspot.config.yml
